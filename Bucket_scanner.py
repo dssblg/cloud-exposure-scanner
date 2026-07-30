@@ -1,4 +1,8 @@
 import requests
+import ReportWriter
+import json
+from Severity import Severity
+from datetime import datetime
 
 class BucketScanner:
     """ Classe de l'outils qui va scanner les buckets
@@ -10,68 +14,84 @@ class BucketScanner:
  
     """
 
-    def __init__(self, nom_bucket,nom_fichier = "",ecriture = False):
-        self.nom_bucket= nom_bucket
-        self.nom_fichier =nom_fichier
-        self.ecriture = ecriture
-        self.url = self.creer_url()
+    def __init__(self, bucket_name,file_name = ""):
+        self.bucket_name= bucket_name
+        self.file_name =file_name
+        self.reporter = ReportWriter.ReportWriter()
+        self.url = self.create_url()
+        self.reporter.add_infos('url_bucket', self.url)
+        self.reporter.add_infos('date - heure', datetime.now().strftime('%d/%m/%Y - %H:%M:%S'))
         
         
 
-    def creer_url(self):
+    def create_url(self):
         """Fonction qui créé le lien URL a la base de la recherche
         """
-        url = "https://"+ self.nom_bucket +".s3.eu-central-1.amazonaws.com/" + self.nom_fichier 
+        url = "https://"+ self.bucket_name +".s3.eu-central-1.amazonaws.com/" + self.file_name 
         return url
 
-    def check_lecture(self):
+    def check_read(self):
         """ Fonction qui essayer de lire sur le bucket
         """
-        if(not self.ecriture):
-            reponse = requests.get(self.url)
-            if (reponse.status_code == 403 ):
-                return"Le fichier est sécurisé on ne peut pas le lire."
-            elif (reponse.status_code == 404 ):
-                return"Le fichier n'existe pas."
-            elif (reponse.status_code == 200 ):
-                return"Le fichier est lisible facilement."
-            else:
-                return"Le status retourné est innatendu."
+        try:
+            reponse = requests.get(self.url, timeout=5)
+        except requests.RequestException as e:
+            print(e)
+            return
+        self.reporter.add_infos('status', reponse.status_code, 'lecture')
+        if (reponse.status_code == 403 ):
+            res = "Le bucket est sécurisé on ne peut pas le lire."
+            self.reporter.add_infos('securité', Severity.SAFE.value, 'lecture')
+        elif (reponse.status_code == 404 ):
+            res = "Le bucket n'existe pas."
+            self.reporter.add_infos('securité', Severity.SAFE.value, 'lecture')
+        elif (reponse.status_code == 200 ):
+            res = "Le bucket est lisible facilement."
+            self.reporter.add_infos('securité', Severity.VULNERABLE.value, 'lecture')
+        else:
+            res = "Le status retourné est innatendu " + str(reponse.status_code)
+            self.reporter.add_infos('securité', Severity.SAFE.value, 'lecture')
+        self.reporter.add_infos('test_lecture', res, 'lecture')
+        
 
-    def check_ecriture(self):
+    def check_write(self):
         """ Fonction qui essayer d'écrire sur le bucket
-                """
-        if(self.ecriture):
-            reponse = requests.put(self.url, "Essai d'ecriture dans le fichier!")
-            if (reponse.status_code == 200 ) or (reponse.status_code == 204 ) :
-                return "Le fichier n'est pas sécurisé on peut ecrire dessus!"
-            elif (reponse.status_code == 404 ):
-                return"Le fichier n'existe pas."
-            elif (reponse.status_code == 403 ):
-                return"Le fichier est sécurisé on ne peut pas ecrire dessus."
-            else:
-                return"Le status retourné est innatendu." + str(reponse.status_code)
+        """
+        try:
+            reponse = requests.put(self.url, "Essai d'ecriture dans le bucket!", timeout=5)
+        except requests.RequestException as e:
+            print(e)
+            return
+        self.reporter.add_infos('status', reponse.status_code, 'ecriture')
+        if (reponse.status_code == 200 ) or (reponse.status_code == 204 ) :
+            res = "Le bucket n'est pas sécurisé on peut ecrire dessus!"
+            self.reporter.add_infos('securité', Severity.VULNERABLE.value, 'ecriture')
+        elif (reponse.status_code == 404 ):
+            res = "Le bucket n'existe pas."
+            self.reporter.add_infos('securité', Severity.SAFE.value, 'ecriture')
+        elif (reponse.status_code == 403 ):
+            res = "Le bucket est sécurisé on ne peut pas ecrire dessus."
+            self.reporter.add_infos('securité', Severity.SAFE.value, 'ecriture')
+        else:
+            res = "Le status retourné est innatendu " + str(reponse.status_code)
+            self.reporter.add_infos('securité', Severity.SAFE.value, 'ecriture')
+        self.reporter.add_infos('test_ecriture', res, 'ecriture')
 
     def scanne(self):
-        """En fonction de si l'tilisateur veut lire ou écrire la fonction scanne le bucket
+        """En fonction de si l'tilisateur veut lire ou écrire la fonction scanne le bucket et ecrit l'annalyse dans le fichier rapport.jsonl
         """
-        if(self.ecriture):
-            return self.check_ecriture()
-        else:
-            return self.check_lecture()
+        self.check_write()
+        self.check_read()
+        self.reporter.write_file()
 
 def main():
-    scanner = BucketScanner("[REMOVED]","lecture.pdf")
-    print ('test1 lecture du fichier lecture.pdf')
-    print(scanner.scanne())
+    with open("test_buckets.json", "r") as fichier:
+        buckets = json.load(fichier)
 
-    scanner = BucketScanner("[REMOVED]", "ecriture.txt", True)
-    print ('test2 ecriture du fichier')
-    print(scanner.scanne())
-
-    scanner = BucketScanner("[REMOVED]" )
-    print ('test3 lecture de rien')
-    print(scanner.scanne())
+    for bucket in buckets:
+        print(f"Scan bucket : {bucket['bucket']}")
+        scanner = BucketScanner( bucket["bucket"], bucket["file"])
+        scanner.scanne()
 
 
 if __name__ == "__main__":

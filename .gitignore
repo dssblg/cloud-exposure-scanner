@@ -2,9 +2,15 @@
 __pycache__/
 *.py[codz]
 *$py.class
+.vscode/
+.idea/
+.DS_Store
 
 # C extensions
 *.so
+
+#my
+rapport.jsonl
 
 # Distribution / packaging
 .Python
