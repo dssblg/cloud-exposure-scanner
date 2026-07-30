@@ -18,13 +18,21 @@ Pour tester la sécurité de systèmes qui ne m'appartiennent pas, la voie léga
 - Génération d'un rapport structuré des résultats
 
 ## Architecture
-// TODO
+- `Bucket_scanner.py` : classe BucketScanner, teste la lecture et l'écriture 
+  publique sur un bucket S3 via requêtes HTTP directes
+- `ReportWriter.py` : permet de générer le rapport de l'analyse des buckets
+- `Severity.py` : Enum permet de savoir si le bucket est safe ou non
+- `test_buckets.json` : liste des buckets à scanner, ceux actuellement dans le fichier sont des URLs factice (noter [REMOVED])
 
 ## Installation
-// TODO
+python3 -m venv venv
+source venv/bin/activate
+pip3 install -r requirements.txt
 
 ## Utilisation
-// TODO
+1. Copier test_buckets.json et adapter les URL des buckets avec les vôtres
+2. python3 Bucket_scanner.py
+3. Résultats dans rapport.jsonl
 
 ## Ce que j'ai appris
 // TODO
