@@ -5,6 +5,8 @@ L'outil créé ici a pour but de vérifier la sécurité de ses propres buckets 
 
 En 2025, un bucket cloud mal configuré a exposé des millions de dossiers de patients chez un prestataire de santé américain, un rappel que ce type d'erreur, en apparence anodine, peut avoir des conséquences massives. J'ai décidé de créer cet outil car le cloud est un élément essentiel pour les entreprises comme pour les particuliers, et ce sujet s'inscrit directement dans mon cursus de Master Cybersécurité du Cloud à l'Edge.
 
+Ce projet illustre une approche "attacker's perspective" : comprendre comment un attaquant détecte une mauvaise configuration permet de mieux la prévenir.
+
 ## Cadre légal
 L'utilisation de cet outil se fera uniquement sur mes propres buckets. Il est interdit de l'utiliser sur des buckets autres que les siens, même s'ils ne sont pas sécurisés.
 
@@ -22,7 +24,7 @@ Pour tester la sécurité de systèmes qui ne m'appartiennent pas, la voie léga
   publique sur un bucket S3 via requêtes HTTP directes
 - `ReportWriter.py` : permet de générer le rapport de l'analyse des buckets
 - `Severity.py` : Enum permet de savoir si le bucket est safe ou non
-- `test_buckets.json` : liste des buckets à scanner, ceux actuellement dans le fichier sont des URLs factice (noter [REMOVED])
+- `test_buckets.json` : liste des buckets à scanner (les URLs dans le fichier sont des exemples factices)
 
 ## Installation
 python3 -m venv venv
@@ -35,7 +37,4 @@ pip3 install -r requirements.txt
 3. Résultats dans rapport.jsonl
 
 ## Ce que j'ai appris
-// TODO
-
-## Roadmap
-Après avoir testé sur AWS, je continuerai de développer pour tester sur Azure, GCP...
+Ce projet m'a permis de mettre en pratique la notion de permissions cloud granulaires : j'ai découvert que lecture, écriture et listing sont trois permissions totalement indépendantes sur un bucket S3, ce qui explique en partie pourquoi les mauvaises configurations sont si fréquentes en entreprise. Ce projet m'a clarifié un point légal essentiel en sécurité offensive : l'autorisation doit toujours précéder le test, jamais le suivre — une distinction que je garde en tête pour toute future démarche de recherche de vulnérabilités. Enfin, j'ai appris à nettoyer l'historique Git avec `git filter-repo` lorsqu'une information a été envoyée par erreur sur GitHub. J'ai compris que supprimer une donnée dans un nouveau commit ne suffit pas, car Git conserve les anciennes versions. Il faut donc réécrire l'historique puis forcer la mise à jour du dépôt distant.
